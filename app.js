@@ -6,6 +6,11 @@ var exec = require('child_process').exec;
 var config = require('./config/config');
 var urls   = require('./config/urls');
 
+const sqlite = require('./modules/db.js'),
+    db       = sqlite.init('./db/yodobashi.sqlite3')
+    crypto   = require('./modules/crypto.js');
+    
+
 http.createServer(function (req, res) {
     if(req.url === '/' && req.method === 'GET') {
         fs.readFile(__dirname + '/index.html', {
@@ -27,8 +32,8 @@ http.createServer(function (req, res) {
         req.on('end',function(){
             var post = qs.parse(body);
             
-            if(config.apiKey !== post.apiKey ){
-                console.log('APIKEYが違います')
+            if(config.apiKey !== post.apiKey){
+                console.log('APIKEYが違います');
                 return;
             }
             
@@ -36,9 +41,18 @@ http.createServer(function (req, res) {
                 console.log('urlが見つかりません');
                 return
             }
-            exec('casperjs yodobashi.js "' + urls[post.key] + '"', function(err, stdout, stderr){
-                if (err) { console.log(err); }
-                console.log(stdout);
+            
+            
+            db.get('select * from users where id = 1', (err, res) => {
+                if (err) return;
+                res.password      = crypto.decrypt(res.password);
+                res.security_code = crypto.decrypt(res.security_code);
+                res.url = urls[post.key];
+
+                exec("casperjs yodobashi.js '" + JSON.stringify(res) + "'", (err, stdout, stderr) => {
+                    if (err) { console.log(err); }
+                    console.log(stdout);
+                });
             });
             res.end();
         });

@@ -16,15 +16,16 @@ let parameters = process.argv.filter(argv => {
 });
 
 db.serialize(function() {
-    db.run("CREATE TABLE users (id integer primary key, mail text, password text, security_code text, receipt_name text)");
+    db.run("CREATE TABLE users (id integer primary key, mail text, password text, security_code text, receipt_name text, site text)");
 
-    db.run("INSERT INTO users (id, mail, password, security_code, receipt_name) VALUES ($i, $m, $p, $s, $r)", 
+    db.run("INSERT INTO users (id, mail, password, security_code, receipt_name, site) VALUES ($i, $m, $p, $s, $r, $st)", 
     {
         $i:1,
         $m: parameters.mail,
         $p: crypto.encrypt(parameters.password),
         $s: crypto.encrypt(parameters.securityCode),
-        $r: parameters.receiptName
+        $r: parameters.receiptName,
+        $st: parameters.site
     });
 });
 
